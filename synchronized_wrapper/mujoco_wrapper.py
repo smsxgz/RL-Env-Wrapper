@@ -40,7 +40,6 @@ class FrameStackEnv(gym.Wrapper):
         self.observation_space = Box(
             low=np.tile(ob_space.low, k),
             high=np.tile(ob_space.high, k),
-            shape=(ob_space.shape[0] * k, ),
             dtype=np.float32)
 
     def reset(self, **kwargs):
