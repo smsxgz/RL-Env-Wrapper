@@ -1,0 +1,9 @@
+.DS_Store
+*__pycache__*
+*ipc*
+games/*
+*train_log*
+*.swp
+*.mp4
+*online*
+*models*

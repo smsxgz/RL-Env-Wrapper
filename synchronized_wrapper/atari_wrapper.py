@@ -17,6 +17,7 @@ def atari_env(env_id, skip=4, stack=4):
     if 'FIRE' in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     env = FrameWarpAndStack(env, stack)
+    env = RewardClipEnv(env)
     # env = NormalizedEnv(env)
     return env
 
@@ -216,3 +217,10 @@ class FrameWarpAndStack(gym.Wrapper):
             frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
         frame = frame.astype(np.float32) / 255.0
         return frame
+
+
+class RewardClipEnv(gym.Wrapper):
+    def step(self, action):
+        ob, reward, done, info = self.env.step(action)
+        info['real_reward'] = reward
+        return ob, np.sign(reward), done, info
