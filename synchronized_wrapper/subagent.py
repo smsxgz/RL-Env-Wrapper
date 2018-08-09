@@ -57,14 +57,14 @@ def set_seed(env, seed=None, was_real_done=True):
 
 
 @ray.remote
-def subagent(make_env_fn, identity, url):
+def subagent(env_fn, identity, url):
     identity = 'SubAgent-{}'.format(identity)
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.identity = identity.encode('utf-8')
     socket.connect(url)
 
-    env = make_env_fn()
+    env = env_fn()
     game_info = GameInfo()
 
     print('subagent {} start!'.format(identity))
@@ -80,6 +80,7 @@ def subagent(make_env_fn, identity, url):
             continue
 
         if action == b'close':
+            env.close()
             socket.close()
             context.term()
             break

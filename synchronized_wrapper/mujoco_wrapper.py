@@ -12,6 +12,16 @@ def mujoco_env(env_id, stack=4):
     return env
 
 
+def get_mujoco_env_fn(env_id, stack=4):
+    def env_fn():
+        env = gym.make(env_id)
+        env = FrameStackEnv(env, stack)
+        env = ActionNormalizedEnv(env)
+        return env
+
+    return env_fn
+
+
 class ActionNormalizedEnv(gym.Wrapper):
     def __init__(self, env):
         gym.Wrapper.__init__(self, env)
@@ -24,8 +34,12 @@ class ActionNormalizedEnv(gym.Wrapper):
         self.action_space = Box(
             low=-1.0, high=1.0, shape=shp, dtype=np.float32)
 
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
     def step(self, action):
         ac = self._action_scale * action + self._action_center
+        # assert self.env.action_space.contains(ac)
         return self.env.step(ac)
 
 

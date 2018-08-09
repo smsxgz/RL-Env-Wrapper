@@ -1,9 +1,9 @@
 .DS_Store
 *__pycache__*
+*.pyc
 *ipc*
-games/*
 *train_log*
 *.swp
 *.mp4
-*online*
 *models*
+*checkpoints*
