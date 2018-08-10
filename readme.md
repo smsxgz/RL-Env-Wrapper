@@ -18,5 +18,15 @@
 --杜甫 兵车行
 
 -----
-将环境同步化会显著地加速RL的训练。  
-在这个项目我将尝试将mujoco-like和atari-like的环境统一进行同步化的包装。
+1. Synchronizing the environment will significantly accelerate the training of Reinforcement Learning. In this Repository, I try to implement a synchronized wrapper for both atari-like and mujoco-like environments.
+1. Agent rely on gym, pyzmq, ray(multiprocessing), msgpack, numpy
+1. wrappers(atari and mujoco) rely on gym, opencv, numpy.
+1. Sample code is shown in script 'RL-Env-Wrapper/synchronized_wrapper/test/test.ipynb'.
+1. Backend can be chosen between 'ray' and 'multiprocessing'. I pefer to 'ray'.
+1. If you need to a synchronized wrapper for your own environment,
+    1. the environment object should have methods like 'reset', 'step', 'seed', 'close',
+    1. you should offer a function which returns an environment object without arguments,
+    1. if the types of 'action_space' and 'observation_space' attributes of the environment object are not 'gym.spaces.Box' or 'gym.spaces.Decrete', you should rewrite the method '\_redefine\_space' of class 'Agent' to define the new 'action_space' and 'observation_space' for synchronized wrapper.
+1. TODO:
+    1. Write a sample script to show how to implement OU-process.
+    1. Write wrappers for dm_control.
