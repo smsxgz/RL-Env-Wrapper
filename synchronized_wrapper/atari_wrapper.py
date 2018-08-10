@@ -29,12 +29,26 @@ def get_atari_env_fn(env_id, skip=4, stack=4):
             assert 'NoFrameskip-v4' in env.spec.id
             env = NoopResetEnv(env, noop_max=30)
             env = MaxAndSkipEnv(env, skip=skip)
-        env = VisualizeEnv(env)
         env = EpisodicLifeEnv(env)
         if 'FIRE' in env.unwrapped.get_action_meanings():
             env = FireResetEnv(env)
         env = FrameWarpAndStack(env, stack)
         env = RewardClipEnv(env)
+        return env
+
+    return env_fn
+
+def get_eval_atari_env_fn(env_id, skip=4, stack=4):
+    def env_fn():
+        env = gym.make(env_id)
+        if 'NoFrameskip-v4' in env_id:
+            assert 'NoFrameskip-v4' in env.spec.id
+            env = NoopResetEnv(env, noop_max=30)
+            env = MaxAndSkipEnv(env, skip=skip)
+        env = VisualizeEnv(env)
+        if 'FIRE' in env.unwrapped.get_action_meanings():
+            env = FireResetEnv(env)
+        env = FrameWarpAndStack(env, stack)
         return env
 
     return env_fn

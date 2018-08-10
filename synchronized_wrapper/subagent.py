@@ -1,4 +1,3 @@
-import ray
 import zmq
 import time
 import msgpack
@@ -14,11 +13,13 @@ class GameInfo:
         self.length = 0
         self.real_length = 0
 
-    def update(self, reward, info):
+    def update(self, reward, done, info):
         self.reward += reward
         self.real_reward += info.get('real_reward') or reward
         self.length += 1
         self.real_length += 1
+
+        return done and self._get_info(info) or {}
 
     def clear(self):
         self.reward = 0.0
@@ -26,7 +27,7 @@ class GameInfo:
         self.length = 0
         self.real_length = 0
 
-    def get(self, info):
+    def _get_info(self, info):
         _info = {b'reward': self.reward, b'length': self.length}
         self.reward = 0.0
         self.length = 0
@@ -56,7 +57,6 @@ def set_seed(env, seed=None, was_real_done=True):
         env.seed(seed)
 
 
-@ray.remote
 def subagent(env_fn, identity, url):
     identity = 'SubAgent-{}'.format(identity)
     context = zmq.Context()
@@ -87,7 +87,7 @@ def subagent(env_fn, identity, url):
 
         action = msgpack.loads(action)
         next_state, reward, done, origin_info = env.step(action)
-        info = game_info.update(reward, origin_info)
+        info = game_info.update(reward, done, origin_info)
 
         if done:
             set_seed(env, was_real_done=origin_info.get('was_real_done', True))

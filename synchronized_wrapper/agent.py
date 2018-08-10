@@ -1,29 +1,35 @@
 import os
-import ray
 import zmq
+import time
 import msgpack
 import numpy as np
 import msgpack_numpy
-from gym.spaces.box import Box
+from gym import spaces
 from collections import OrderedDict
 
-from .subagent import subagent
-
-ray.init()
 msgpack_numpy.patch()
+INITED_RAY = False
+
+
+def _get_multi_space(space, n):
+    if type(space) == spaces.Box:
+        return spaces.Box(
+            low=np.repeat([space.low], n, axis=0),
+            high=np.repeat([space.high], n, axis=0),
+            dtype=space.dtype)
+    elif type(space) == spaces.Discrete:
+        return spaces.MultiDiscrete(nvec=[space.n] * n)
+    else:
+        # TODO: add other spaces class
+        raise NotImplementedError
 
 
 class Agent:
-    def __init__(self, num_agents, env_fn, basename):
+    def __init__(self, num_agents, env_fn, basename, backend='ray'):
         self._num_agents = num_agents
 
         env = env_fn()
-        ob_space = env.observation_space
-        self.observation_space = Box(
-            low=np.repeat([ob_space.low], num_agents, axis=0),
-            high=np.repeat([ob_space.high], num_agents, axis=0),
-            dtype=np.float32)
-        self.action_space = env.action_space
+        self._redefine_space(env)
         env.close()
 
         base_path = './.ipc'
@@ -39,8 +45,7 @@ class Agent:
         self._socket = self._context.socket(zmq.ROUTER)
         self._socket.bind(url)
 
-        # Run subagents
-        [subagent.remote(env_fn, i, url) for i in range(num_agents)]
+        self._run_subagents(env_fn, url, backend)
 
         self.addrs = OrderedDict()
 
@@ -50,6 +55,41 @@ class Agent:
             self.addrs[addr] = None
             assert msg == b'ready'
         print('All subagents are ready! ')
+
+    def _run_subagents(self, env_fn, url, backend='ray'):
+        if backend == 'ray':
+            import ray
+            from .subagent import subagent
+
+            ray_subagent = ray.remote(subagent)
+
+            global INITED_RAY
+            if not INITED_RAY:
+                ray.init()
+                INITED_RAY = True
+
+            [
+                ray_subagent.remote(env_fn, i, url)
+                for i in range(self._num_agents)
+            ]
+
+        elif backend == 'multiprocessing':
+            from multiprocessing import Process
+            from .subagent import subagent
+            [
+                Process(target=subagent, args=(env_fn, i, url)).start()
+                for i in range(self._num_agents)
+            ]
+
+        else:
+            raise NotImplementedError
+
+    def _redefine_space(self, sample_env):
+        self.observation_space = _get_multi_space(sample_env.observation_space,
+                                                  self._num_agents)
+
+        self.action_space = _get_multi_space(sample_env.action_space,
+                                             self._num_agents)
 
     def reset(self):
         for addr in self.addrs:
@@ -77,5 +117,6 @@ class Agent:
     def close(self):
         for addr in self.addrs:
             self._socket.send_multipart([addr, b'', b'close'])
+        time.sleep(1)
         self._socket.close()
         self._context.term()
