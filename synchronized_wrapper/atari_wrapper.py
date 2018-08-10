@@ -38,6 +38,7 @@ def get_atari_env_fn(env_id, skip=4, stack=4):
 
     return env_fn
 
+
 def get_eval_atari_env_fn(env_id, skip=4, stack=4):
     def env_fn():
         env = gym.make(env_id)
