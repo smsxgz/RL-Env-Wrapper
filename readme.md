@@ -23,7 +23,7 @@
 1. wrappers(atari and mujoco) rely on gym, opencv, numpy.
 1. Sample code is shown in script 'RL-Env-Wrapper/synchronized_wrapper/test/test.ipynb'.
 1. Backend can be chosen between 'ray' and 'multiprocessing'. I pefer to 'ray'.
-1. If you need to a synchronized wrapper for your own environment,
+1. If you need a synchronized wrapper for your own environment,
     1. the environment object should have methods like 'reset', 'step', 'seed', 'close',
     1. you should offer a function which returns an environment object without arguments,
     1. if the types of 'action_space' and 'observation_space' attributes of the environment object are not 'gym.spaces.Box' or 'gym.spaces.Decrete', you should rewrite the method '\_redefine\_space' of class 'Agent' to define the new 'action_space' and 'observation_space' for synchronized wrapper.
