@@ -29,7 +29,9 @@ class Agent:
         self._num_agents = num_agents
 
         env = env_fn()
-        self._redefine_space(env)
+        # self._redefine_space(env)
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
         env.close()
 
         base_path = './.ipc'
